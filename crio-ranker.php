@@ -1,10 +1,11 @@
 <?php
 
-const PER_PAGE = 100; //assume Crio is above rank 100
-const PAGE = 2; //assume Crio is below rank 200
+const PER_PAGE = 100;
+const PAGE = 2;
 const URL = 'https://api.wordpress.org/themes/info/1.2/';
 const REASONABLE_TIME = 5;
-const DATASET_SIZE = 3; //Number of themes above and below Crio to check
+const DATASET_SIZE = 3;
+const TARGET_THEME = 'crio';
 
 function get_api_response( $request ) {
   $curl_options = array(
@@ -48,15 +49,15 @@ $array_response = get_api_response( $params );
 
 $themes_list = $array_response['themes'];
 
-$crio_location = array_search( 'crio', array_column($themes_list, 'slug' ) );
-if ( ! $crio_location ) {
-  exit( 'Crio not found in dataset. Adjust per_page and page constants.');
+$theme_location = array_search( TARGET_THEME, array_column($themes_list, 'slug' ) );
+if ( ! $theme_location ) {
+  exit( 'Target theme ' . TARGET_THEME . ' not found in dataset. Adjust per_page and page constants.');
 }
 
-$crio_rank = ( ( (int)PER_PAGE * ( (int)PAGE -1 ) ) + (int)$crio_location );
+$theme_rank = ( ( (int)PER_PAGE * ( (int)PAGE -1 ) ) + (int)$theme_location );
 
 //Slice array down to chosen dataset size
-$themes_list = array_slice( $themes_list, ($crio_location - DATASET_SIZE), ((DATASET_SIZE * 2) + 1 ), true );
+$themes_list = array_slice( $themes_list, ($theme_location - DATASET_SIZE), ((DATASET_SIZE * 2) + 1 ), true );
 
 foreach ( $themes_list as $key => $theme ) {
   $params = array(
@@ -71,11 +72,11 @@ foreach ( $themes_list as $key => $theme ) {
   $array_response = get_api_response( $params );
 
   $themes_list[$key]['creation_time'] = $array_response['creation_time'];
-
+  echo 'Theme ' . $theme['slug'] . ' fetched.';
   sleep( REASONABLE_TIME );
 }
 
-$csvfile = fopen( "theme-ranks.csv", 'w' );
+$csvfile = fopen( TARGET_THEME . "-ranks.csv", 'w' );
 fputcsv( $csvfile, array(
                           'slug',
                           'rank',
